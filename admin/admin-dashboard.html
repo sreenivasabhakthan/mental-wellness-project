@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .container {
+            max-width: 64rem;
+            margin: 0 auto;
+            padding: 2rem;
+            flex-grow: 1;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            padding: 2.5rem;
+        }
+        .btn-secondary {
+            background-color: #e5e7eb;
+            color: #4b5563;
+            font-weight: 700;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.15s ease-in-out;
+            cursor: pointer;
+        }
+        .btn-secondary:hover {
+            background-color: #d1d5db;
+        }
+        .log-entry {
+            background-color: #f9fafb;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #e5e7eb;
+            margin-top: 1rem;
+        }
+        .flagged {
+            border: 2px solid #ef4444; /* Red border for flagged logs */
+        }
+    </style>
+</head>
+<body>
+
+    <header class="bg-indigo-600 shadow-md">
+        <nav class="container flex justify-between items-center py-4 text-white">
+            <h1 class="text-2xl font-bold">Admin Dashboard</h1>
+            <button id="logout-btn" class="btn-secondary">Logout</button>
+        </nav>
+    </header>
+
+    <main class="container mt-8">
+        <div class="card mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Dashboard Statistics</h2>
+            <div id="stats-container" class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                <div class="bg-blue-100 p-4 rounded-lg">
+                    <h3 class="text-lg font-bold text-blue-800">Total Logs</h3>
+                    <p id="total-logs" class="text-2xl font-bold text-blue-600">...</p>
+                </div>
+                <div class="bg-green-100 p-4 rounded-lg">
+                    <h3 class="text-lg font-bold text-green-800">Average Mood</h3>
+                    <p id="avg-mood" class="text-2xl font-bold text-green-600">...</p>
+                </div>
+                <div class="bg-yellow-100 p-4 rounded-lg">
+                    <h3 class="text-lg font-bold text-yellow-800">Average Stress</h3>
+                    <p id="avg-stress" class="text-2xl font-bold text-yellow-600">...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">All Student Logs</h2>
+            <div id="logs-container" class="space-y-4">
+                <p class="text-center text-gray-500">Loading logs...</p>
+            </div>
+        </div>
+    </main>
+
+    <footer class="text-center py-4 text-gray-500 text-sm mt-auto">
+        &copy; 2023 Admin Dashboard. All rights reserved.
+    </footer>
+
+    <script>
+        const BACKEND_URL = 'http://localhost:3000/api';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchLogs();
+        });
+
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            window.location.href = 'admin-login.html';
+        });
+
+        async function fetchLogs() {
+            const logsContainer = document.getElementById('logs-container');
+            const statsContainer = document.getElementById('stats-container');
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/logs`);
+                const logs = await response.json();
+                
+                if (response.ok) {
+                    renderLogs(logs);
+                    calculateAndRenderStats(logs);
+                } else {
+                    logsContainer.innerHTML = `<p class="text-red-600">Error: ${logs.message}</p>`;
+                }
+            } catch (error) {
+                console.error('Fetch error:', error);
+                logsContainer.innerHTML = `<p class="text-red-600">Failed to fetch logs. Is the backend server running?</p>`;
+            }
+        }
+
+        function renderLogs(logs) {
+            const logsContainer = document.getElementById('logs-container');
+            logsContainer.innerHTML = ''; // Clear loading message
+
+            if (logs.length === 0) {
+                logsContainer.innerHTML = '<p class="text-center text-gray-500">No logs found.</p>';
+                return;
+            }
+
+            logs.forEach(log => {
+                const logEntry = document.createElement('div');
+                logEntry.className = 'log-entry';
+                logEntry.innerHTML = `
+                    <div class="flex justify-between items-center mb-2">
+                        <div>
+                            <span class="text-sm font-medium text-gray-600">${log.date}</span>
+                            <span class="text-sm font-bold text-indigo-600 ml-4">${log.mood}</span>
+                            <span class="text-sm font-medium text-gray-500 ml-4">by ${log.is_anonymous ? 'Anonymous' : log.user_email}</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                             <span class="text-sm font-medium text-gray-700">Stress: <span class="font-bold">${log.stress_level}</span></span>
+                             <button class="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-3 rounded text-xs" onclick="flagLog(${log.log_id}, this)">Mark for Follow-up</button>
+                        </div>
+                    </div>
+                    <p class="text-gray-700 text-sm"><strong>Reasons:</strong> ${log.reason || 'N/A'}</p>
+                    <p class="text-gray-700 text-sm"><strong>Comments:</strong> ${log.comments || 'N/A'}</p>
+                `;
+                logsContainer.appendChild(logEntry);
+            });
+        }
+        
+        function calculateAndRenderStats(logs) {
+            const totalLogs = logs.length;
+            const moodValues = { 'Happy': 5, 'Neutral': 3, 'Sad': 2, 'Anxious': 1, 'Stressed': 1 };
+            let totalMoodScore = 0;
+            let totalStressLevel = 0;
+
+            logs.forEach(log => {
+                totalMoodScore += moodValues[log.mood] || 0;
+                totalStressLevel += log.stress_level;
+            });
+            
+            const avgMoodScore = totalLogs > 0 ? (totalMoodScore / totalLogs).toFixed(1) : 0;
+            const avgStressLevel = totalLogs > 0 ? (totalStressLevel / totalLogs).toFixed(1) : 0;
+            
+            document.getElementById('total-logs').textContent = totalLogs;
+            document.getElementById('avg-mood').textContent = avgMoodScore;
+            document.getElementById('avg-stress').textContent = avgStressLevel;
+        }
+        
+        function flagLog(logId, buttonElement) {
+            // In a real application, you would send an API request to the backend
+            // to mark this log for follow-up in the database.
+            console.log(`Log with ID ${logId} has been marked for follow-up.`);
+            
+            const logEntry = buttonElement.closest('.log-entry');
+            logEntry.classList.add('flagged');
+            buttonElement.textContent = 'Flagged';
+            buttonElement.disabled = true;
+            
+            // You could also show a temporary message or a modal here.
+            alert('This log has been marked for follow-up.');
+        }
+    </script>
+</body>
+</html>

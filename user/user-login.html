@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Login</title>
+    <!-- Use a modern font like Inter from Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #e2e8f0; /* Lighter blue-gray background */
+        }
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            padding: 2.5rem;
+            max-width: 28rem;
+            width: 100%;
+            text-align: center;
+        }
+        .form-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: #1d4ed8; /* Blue-700 */
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5); /* Semi-transparent blue ring */
+        }
+        .btn-primary {
+            background-color: #2563eb; /* Blue-600 */
+            color: #ffffff;
+            font-weight: 700;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            width: 100%;
+            transition: background-color 0.15s ease-in-out;
+        }
+        .btn-primary:hover {
+            background-color: #1e40af; /* Blue-800 */
+        }
+        .message-box {
+            position: fixed;
+            top: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 1rem 2rem;
+            border-radius: 0.5rem;
+            z-index: 1000;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+        .message-box.show {
+            opacity: 1;
+        }
+        .message-box.error {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        .message-box.success {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="card">
+            <h2 class="text-3xl font-bold mb-6 text-gray-800">Campus Login</h2>
+            <p class="text-gray-600 mb-8">For Students & Faculty</p>
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <input type="email" id="email" name="email" class="form-input" placeholder="Campus Email" required>
+                </div>
+                <div>
+                    <input type="password" id="password" name="password" class="form-input" placeholder="Password" required>
+                </div>
+                <div>
+                    <label for="id-card" class="block text-sm font-medium text-gray-700 text-left">Upload ID Card</label>
+                    <input type="file" id="id-card" name="id-card" class="form-input mt-1" required accept="image/*">
+                </div>
+                <button type="submit" class="btn-primary">Login</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="message-box" class="message-box"></div>
+
+    <script>
+        const messageBox = document.getElementById('message-box');
+        
+        /**
+         * Renders a message box with a given message and type.
+         * @param {string} message The message to display.
+         * @param {string} type The type of message ('success' or 'error').
+         */
+        function showMessage(message, type) {
+            messageBox.textContent = message;
+            messageBox.className = `message-box show ${type}`;
+            setTimeout(() => {
+                messageBox.className = 'message-box';
+            }, 3000);
+        }
+
+        document.getElementById('login-form').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const idCardFile = document.getElementById('id-card').files[0];
+
+            // In a real app, this would be a fetch() call to a backend
+            // For this example, we will simulate a successful login and
+            // pass the user details and a "verified" status to the next page.
+            if (email === 'user@campus.edu' && password === 'user123' && idCardFile) {
+                showMessage('Login successful! Verifying ID card...', 'success');
+
+                // Simulate ID card verification
+                const verificationPassed = true; 
+
+                if (verificationPassed) {
+                    const userData = {
+                        name: 'John Doe',
+                        email: email,
+                        idCardName: idCardFile.name
+                    };
+                    
+                    // Use localStorage to pass data to the dashboard
+                    localStorage.setItem('userData', JSON.stringify(userData));
+
+                    // Redirect after a short delay
+                    setTimeout(() => {
+                        window.location.href = 'user-dashboard.html';
+                    }, 1500);
+                } else {
+                    showMessage('ID card verification failed. Please try again.', 'error');
+                }
+
+            } else {
+                showMessage('Invalid email, password, or no ID card file uploaded.', 'error');
+            }
+        });
+    </script>
+</body>
+</html>
